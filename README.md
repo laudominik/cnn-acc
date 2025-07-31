@@ -4,9 +4,16 @@ Deep Learning Accelerator for CNNs
 ## Generating verilog
 
 ```sh
-TODO
+$ sbt "runMain AcceleratorDriver" 2> generated.v
 ```
 
+## Synthesis
+
+```sh
+yosys> read_verilog generated.v
+yosys> synth -top Accelerator
+yosys> show Accelerator
+```
 
 ## Running simulations
 

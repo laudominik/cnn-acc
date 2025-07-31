@@ -1,3 +1,4 @@
+import circt.stage.ChiselStage
 import chisel3._
 import chisel3.util._
 
@@ -30,4 +31,10 @@ class ProcessingArray(rows: Int, cols: Int, width: Int = 8) extends Module {
   for (r <- 0 until rows) {
     io.out(r) := macs(r)(cols - 1).io.out
   }
+}
+
+object ProcessingArrayDriver extends App {
+  System.err.println(
+    ChiselStage.emitSystemVerilog(new ProcessingArray(4, 5), firtoolOpts = Array("-disable-all-randomization", "-strip-debug-info"))
+  )
 }
