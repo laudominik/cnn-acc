@@ -4,45 +4,45 @@ digraph ProcessingArray {
         subgraph {
             node [shape=box]
             rank=same
-            "Weights00" "PE_0000" "PE_0100" "PE_1000" "PE_1100"
+            "Weights00" "MAc_0000" "MAc_0100" "MAc_1000" "MAc_1100"
         }
 
         subgraph {
             node [shape=box]
             rank=same 
-            "Weights01" "PE_0001" "PE_0101" "PE_1001" "PE_1101"
+            "Weights01" "MAc_0001" "MAc_0101" "MAc_1001" "MAc_1101"
         }
 
         subgraph {
             node [shape=box]
             rank=same
-            "Weights10" "PE_0010" "PE_0110" "PE_1010" "PE_1110"    
+            "Weights10" "MAc_0010" "MAc_0110" "MAc_1010" "MAc_1110"    
         }
 
-        "PE_0000" -> "PE_0001" [style=invis]
-        "PE_0001" -> "PE_0010" [style=invis]
-        "PE_0101" -> "PE_0110" [style=invis]
-        "PE_1001" -> "PE_1010" [style=invis]
-        "PE_1101" -> "PE_1110" [style=invis]
+        "MAc_0000" -> "MAc_0001" [style=invis]
+        "MAc_0001" -> "MAc_0010" [style=invis]
+        "MAc_0101" -> "MAc_0110" [style=invis]
+        "MAc_1001" -> "MAc_1010" [style=invis]
+        "MAc_1101" -> "MAc_1110" [style=invis]
 
         "Weights00" -> "Weights01" [style=invis]
         "Weights01" -> "Weights10" [style=invis]
 
         // bus
-        Weights00 -> PE_0000
-        PE_0000 -> PE_0100
-        PE_0100 -> PE_1000
-        PE_1000 -> PE_1100
+        Weights00 -> MAc_0000
+        MAc_0000 -> MAc_0100
+        MAc_0100 -> MAc_1000
+        MAc_1000 -> MAc_1100
 
-        Weights01 -> PE_0001
-        PE_0001 -> PE_0101
-        PE_0101 -> PE_1001
-        PE_1001 -> PE_1101
+        Weights01 -> MAc_0001
+        MAc_0001 -> MAc_0101
+        MAc_0101 -> MAc_1001
+        MAc_1001 -> MAc_1101
 
-        Weights10 -> PE_0010
-        PE_0010 -> PE_0110
-        PE_0110 -> PE_1010
-        PE_1010 -> PE_1110
+        Weights10 -> MAc_0010
+        MAc_0010 -> MAc_0110
+        MAc_0110 -> MAc_1010
+        MAc_1010 -> MAc_1110
     }
 
     

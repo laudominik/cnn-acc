@@ -1,0 +1,17 @@
+digraph BankedBuffer {
+    rankdir=LR;
+
+    BankedBuffer
+    Bank1 [shape="box"]
+    Bank2 [shape="box"]
+    Bank3 [shape="box"]
+    "..." [shape="box"]
+    BankN [shape="box"]
+
+    BankedBuffer -> Bank1 [dir="both"]
+    BankedBuffer -> Bank2 [dir="both"] 
+    BankedBuffer -> Bank3 [dir="both"]
+    BankedBuffer -> "..." [dir="both"]
+    BankedBuffer -> BankN [dir="both"]
+
+}

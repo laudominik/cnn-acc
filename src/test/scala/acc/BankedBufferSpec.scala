@@ -3,9 +3,9 @@ import chisel3.simulator.scalatest.ChiselSim
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 
-class InputBufferSpec extends AnyFreeSpec with Matchers with ChiselSim {
-  "InputBuffer should correctly write and read multiple banks" in {
-    simulate(new InputBuffer(numBanks = 4, bankDepth = 8, width = 16)) { dut =>      
+class BankedBufferSpec extends AnyFreeSpec with Matchers with ChiselSim {
+  "BankedBuffer should correctly write and read multiple banks" in {
+    simulate(new BankedBuffer(numBanks = 4, bankDepth = 8, width = 16)) { dut =>      
       for (i <- 0 until 4) {
         dut.io.wrEn(i).poke(false.B)
         dut.io.wrAddr(i).poke(0.U)

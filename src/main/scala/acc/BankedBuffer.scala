@@ -4,7 +4,7 @@ import chisel3.util._
 import chisel3._
 import chisel3.util._
 
-class InputBuffer(val numBanks: Int, val bankDepth: Int, val width: Int) extends Module {
+class BankedBuffer(val numBanks: Int, val bankDepth: Int, val width: Int) extends Module {
   val addrWidth = log2Ceil(bankDepth)
 
   val io = IO(new Bundle {
