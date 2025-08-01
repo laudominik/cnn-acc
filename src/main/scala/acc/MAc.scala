@@ -9,5 +9,9 @@ class MAc(width: Int = 8) extends Module {
     val out = Output(UInt((2*width).W))
   })
 
-  io.out := io.input * io.weight + io.accumulator
+  val mul = RegInit(0.U((2 * width).W))
+
+  val prod = RegNext(io.input * io.weight)
+
+  io.out := prod + io.accumulator
 }

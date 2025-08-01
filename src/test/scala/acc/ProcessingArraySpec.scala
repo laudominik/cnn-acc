@@ -10,6 +10,7 @@ class ProcessingArraySpec extends AnyFreeSpec with Matchers with ChiselSim {
     val rows = 4
     val cols = 5
     val dataWidth = 8
+    val latency = 2 * cols - 1
 
     simulate(new ProcessingArray(rows, cols, dataWidth)) { dut =>
       dut.reset.poke(true.B)
@@ -34,7 +35,7 @@ class ProcessingArraySpec extends AnyFreeSpec with Matchers with ChiselSim {
         }).sum
       }
 
-      dut.clock.step(cols)
+      dut.clock.step(latency)
 
       for (r <- 0 until rows) {
         dut.io.out(r).expect(expected(r).U(2 * dataWidth - 1, 0))
