@@ -1,4 +1,5 @@
 import circt.stage.ChiselStage
+import chisel3.stage.ChiselGeneratorAnnotation
 import chisel3._
 import chisel3.util._
 
@@ -36,7 +37,14 @@ class ProcessingArray(rows: Int, cols: Int, width: Int = 8) extends Module {
 
 
 object ProcessingArrayDriver extends App {
-  System.err.println(
-    ChiselStage.emitSystemVerilog(new ProcessingArray(4, 5), firtoolOpts = Array("-disable-all-randomization", "-strip-debug-info"))
+  ChiselStage.emitSystemVerilog(new ProcessingArray(4, 5), 
+  firtoolOpts = Array(
+    "-disable-all-randomization", 
+    "-strip-debug-info", 
+    "-enable-layers=Verification",
+    "-enable-layers=Verification.Assert",
+    "-enable-layers=Verification.Assume",
+    "-enable-layers=Verification.Cover",
+    "-o", "generated.v")
   )
 }
