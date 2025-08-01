@@ -1,0 +1,4 @@
+read_verilog generated.v
+synth -top ProcessingArray
+dfflibmap -liberty libs/osu018_stdcells.lib
+abc -liberty libs/osu018_stdcells.lib -constr script/osu018_stdcells.constr

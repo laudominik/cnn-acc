@@ -10,9 +10,7 @@ $ sbt "runMain AcceleratorDriver" 2> generated.v
 ## Synthesis
 
 ```sh
-yosys> read_verilog generated.v
-yosys> synth -top Accelerator
-yosys> show Accelerator
+$ yosys script/synth.ys
 ```
 
 ## Running simulations
@@ -21,12 +19,6 @@ Testbenches in Chisel
 
 ```sh
 $ sbt test
-```
-
-Test with Verilator
-
-```sh
-$ svsim
 ```
 
 ## Building docs
