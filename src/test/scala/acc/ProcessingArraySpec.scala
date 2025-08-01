@@ -27,13 +27,15 @@ class ProcessingArraySpec extends AnyFreeSpec with Matchers with ChiselSim {
       for (c <- 0 until cols) {
         dut.io.inputs(c).poke(inputs(c))
       }
-      dut.clock.step()
 
       val expected = (0 until rows).map { r =>
         ((0 until cols).map { c=>
           inputs(c).litValue * weights(r).litValue
         }).sum
       }
+
+      dut.clock.step(cols)
+
       for (r <- 0 until rows) {
         dut.io.out(r).expect(expected(r).U(2 * dataWidth - 1, 0))
       }

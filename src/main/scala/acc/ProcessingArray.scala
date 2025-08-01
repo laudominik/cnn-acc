@@ -12,26 +12,28 @@ class ProcessingArray(rows: Int, cols: Int, width: Int = 8) extends Module {
   })
 
   val macs = Seq.fill(rows, cols)(Module(new MAc(width)))
-  
+  val accRegs = Seq.fill(rows, cols)(RegInit(0.U((2 * width).W)))
+
   for (r <- 0 until rows) {
     for (c <- 0 until cols) {
       macs(r)(c).io.input := io.inputs(c)
       macs(r)(c).io.weight := io.weights(r)
-    }
-  }
-  for (c <- 0 until cols) {
-    for (r <- 0 until rows) {
+
       if (c == 0) {
         macs(r)(c).io.accumulator := 0.U
       } else {
-        macs(r)(c).io.accumulator := macs(r)(c - 1).io.out
+        macs(r)(c).io.accumulator := accRegs(r)(c - 1)
       }
+
+      accRegs(r)(c) := macs(r)(c).io.out
     }
   }
+
   for (r <- 0 until rows) {
-    io.out(r) := macs(r)(cols - 1).io.out
+    io.out(r) := accRegs(r)(cols-1)
   }
 }
+
 
 object ProcessingArrayDriver extends App {
   System.err.println(
