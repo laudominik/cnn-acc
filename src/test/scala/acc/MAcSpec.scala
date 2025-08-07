@@ -5,6 +5,7 @@ import org.scalatest.matchers.must.Matchers
 import scala.util.Random
 
 class MAcSpec extends AnyFreeSpec with Matchers with ChiselSim {
+  val latency = 1
 
   "MAc should produce correct operation results" in {
     simulate(new MAc(8)) { dut =>
@@ -18,7 +19,7 @@ class MAcSpec extends AnyFreeSpec with Matchers with ChiselSim {
         dut.io.input.poke(input.U)
         dut.io.weight.poke(weight.U)
         dut.io.accumulator.poke(accumulator.U)
-        dut.clock.step()
+        dut.clock.step(latency)
 
         val expected = input * weight + accumulator
         dut.io.out.expect(expected.U)

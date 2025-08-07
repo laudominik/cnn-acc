@@ -11,7 +11,7 @@ class DiagonalProcessingArraySpec extends AnyFreeSpec with Matchers with ChiselS
     val dataWidth = 8
     val cols = weights
     val rows = inputs + 1 - cols
-    val latency = rows + 2 * (cols - 1)// TODO: investigate the latency
+    val latency = cols * 2 + 2 
 
     simulate(new DiagonalProcessingArray(weights, inputs, dataWidth)) { dut =>
       dut.reset.poke(true.B)

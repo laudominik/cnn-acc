@@ -10,7 +10,7 @@ class ProcessingArraySpec extends AnyFreeSpec with Matchers with ChiselSim {
     val rows = 4
     val cols = 5
     val dataWidth = 8
-    val latency = 2 * cols - 1
+    val latency = 2 * cols
 
     simulate(new ProcessingArray(rows, cols, dataWidth)) { dut =>
       dut.reset.poke(true.B)
