@@ -47,23 +47,26 @@ class MatmulCtrl(
     val systolicInput  = Output(Vec(rows, UInt(dataWidth.W)))
     val systolicWeights = Output(Vec(rows, Vec(cols, UInt(dataWidth.W))))
     val systolicOut     = Input(Vec(cols, UInt((2*dataWidth).W)))
-    val dramIO          = new DramIO(dramAddrWidth, dramDataWidth)
-    // dram
-    // val dramRdEn        = Output(Bool())
-    // val dramRdAddr      = Output(UInt(addrWidth))
-    // val dramRdData      = Input(UInt(dataWidth))
+    // axi ram (master)
+    val axiRamWrCmd = Decoupled(new AxiRamWrCtrlCmd(dramDataWidth, dramAddrWidth))
+    val axiRamRdCmd = Decoupled(new AxiRamRdCtrlCmd(dramDataWidth, dramAddrWidth))
+    val axiRamRdResp = Flipped(Decoupled(new AxiRamRdResp(dramDataWidth, dramAddrWidth)))
   })
   val log = SimLog.StdErr
-  val sIdle :: sInit :: sInitWeights :: sBusy :: sDone :: Nil = Enum(5)
+  val dramWidthB = dramDataWidth / 8
+  val sIdle :: sInitWeightsRequest :: sInitWeights :: sBusy :: sDone :: Nil = Enum(5)
   val state = RegInit(sIdle)
   val cmd = RegInit(0.U.asTypeOf(new MatmulCommand(dramAddrWidth)))
   val inputRegs = RegInit(VecInit(Seq.fill(rows)(0.U(dataWidth.W))))
+  val axiSystolicDataRatio = dramDataWidth / dataWidth
 
   // weights
+  val addrReg = RegInit(0.U(dramAddrWidth.W))
+  val lenReg = RegInit(0.U(dramDataWidth.W))
+
   val weightRegs = RegInit(VecInit(Seq.fill(rows)(VecInit(Seq.fill(cols)(0.U(dataWidth.W))))))
   val weightsCopied = Reg(UInt(16.W))
   val targetWeights = Reg(UInt(16.W))
-  val readData = io.dramIO.readData
 
   io.systolicInput := inputRegs
   io.systolicWeights := weightRegs
@@ -72,33 +75,43 @@ class MatmulCtrl(
   io.cmd.nodeq()
   io.cmd.ready := (state === sIdle)
   io.resp.valid := (state === sDone && io.resp.ready)
-  io.dramIO.writeEn := 0.U
-  io.dramIO.readEn := (
-    state === sInit || state === sInitWeights
-  )
-  io.dramIO.addr := DontCare
-  io.dramIO.readData := DontCare
-  io.dramIO.writeData := DontCare
+ 
+  io.axiRamWrCmd.bits := 0.U.asTypeOf(new AxiRamWrCtrlCmd(dramDataWidth, dramAddrWidth))
+  io.axiRamRdCmd.bits := 0.U.asTypeOf(new AxiRamRdCtrlCmd(dramDataWidth, dramAddrWidth))
+  io.axiRamWrCmd.valid := 0.U
+  io.axiRamRdResp.ready := (state === sInitWeights)
+
+
+  io.axiRamRdCmd.bits.addr := addrReg
+  io.axiRamRdCmd.bits.len := lenReg
+  io.axiRamRdCmd.valid := (state === sInitWeightsRequest)
+
+  def ceilUIntDiv(a: UInt, b: UInt): UInt =
+    (a + b - 1.U) / b
+
 
   switch(state) {
     is(sIdle) {
       when(io.cmd.valid) {
-        state := sInit
+        state := sInitWeightsRequest
         cmd := io.cmd.bits
 
-        printf(p"[MatmulCtrl::sIdle] Command received\n")
+        addrReg := io.cmd.bits.weightsAddr
+  
+        lenReg := ceilUIntDiv(io.cmd.bits.weightsDim.w * io.cmd.bits.weightsDim.h, axiSystolicDataRatio.U) - 1.U // how many beats
+        printf(p"[MatmulCtrl::sIdle] Command received: ${io.cmd.bits}  \n")
       }
     }
-    is(sInit) {
-      printf(p"[MatmulCtrl::sInit] batchSize=${cmd.batchSize} inputAddr=${cmd.inputAddr}\n")
-      state := sInitWeights
-      weightsCopied := 0.U
-      io.dramIO.addr := cmd.weightsAddr
+    is(sInitWeightsRequest) {
+      when (io.axiRamRdResp.valid) {
+        printf(p"[MatmulCtrl::sInitWeightsRequest] -> sInitWeights\n")
+        state := sInitWeights
+      }
     }
     is(sInitWeights) {
-      printf(p"[MatmulCtr::sInitWeights] saving weight ${readData} \n")
-      weightsCopied := weightsCopied + 1.U
-      weightRegs(0)(0) := readData // TODO: slice bits
+      printf(p"[MatmulCtr::sInitWeights] \n")
+      // weightsCopied := weightsCopied + 1.U
+      // weightRegs(0)(0) := readData // TODO: slice bits
       // weights
       // io.dramIO.addr := 
       // copy weights
@@ -116,18 +129,5 @@ class MatmulCtrl(
       // when(io)
     }
   }
-
-
-  // when(io.cmd.valid) {
-  //   // io.cmd.ready 
-
-
-  //   // io.read_routing_table_response.enq(tbl(
-  //   //   io.read_routing_table_request.deq().addr
-  //   // ))
-  // }
-
-  // when(cmd.ready)
-
 }
 

@@ -18,65 +18,59 @@ class MatmulCtrlSpec extends AnyFreeSpec with Matchers with ChiselSim {
 
   // systolic
   val dataWidth = 8
-  val rows = 5
-  val cols = 5
-  
+  val rows = 8
+  val cols = 8
+
   "MatmulCtrl should carry out sent commands" in {
     simulate(
       new Module {
         val io = IO(new Bundle {
           val cmd   = Flipped(Decoupled(new MatmulCommand(dramAddrWidth)))
+          val testWrCmd = Flipped(Decoupled(new AxiRamWrCtrlCmd(dramDataWidth, dramAddrWidth)))
+          val testRdCmd = Flipped(Decoupled(new AxiRamRdCtrlCmd(dramDataWidth, dramAddrWidth)))
+          val testRdResp = Decoupled(new AxiRamRdResp(dramDataWidth, dramAddrWidth))
           val resp = Decoupled(MatmulStatus())
-          val dramInit = Flipped(new DramInit(dramAddrWidth, dramDataWidth))
         })
         val ctrl = Module(new MatmulCtrl(rows, cols, dramAddrWidth, dramDataWidth, inputAddrWidth, weightsAddrWidth, dataWidth))
         val systolic = Module(new SystolicArray(rows, cols, dataWidth))
-        val dram = Module(new Dram(dramAddrWidth, dramDataWidth))
-        
+        val axiCtrl = Module(new AxiRamCtrl(dramDataWidth, dramAddrWidth))
+        val testableRam = Module(new TestableAxiRam(dramDataWidth, dramAddrWidth))
+        axiCtrl.io.axi <> testableRam.io.axi
+        axiCtrl.io.wrCmd <> ctrl.io.axiRamWrCmd
+        axiCtrl.io.rdCmd <> ctrl.io.axiRamRdCmd
+        axiCtrl.io.rdResp <> ctrl.io.axiRamRdResp
+        io.testWrCmd <> testableRam.io.testWrCmd
+        io.testRdCmd <> testableRam.io.testRdCmd
+        io.testRdResp <> testableRam.io.testRdResp
+
         systolic.io.inputs := ctrl.io.systolicInput
         systolic.io.weights := ctrl.io.systolicWeights
         ctrl.io.systolicOut := systolic.io.out
         ctrl.io.cmd <> io.cmd
         ctrl.io.resp <> io.resp
-        ctrl.io.dramIO <> dram.io
-        io.dramInit <> dram.init 
       }) { dut =>
-        def writeToDram(addr: Int, data: Int): Unit = {
-          dut.io.dramInit.data.poke(data.U)
-          dut.io.dramInit.addr.poke(addr)
-          dut.io.dramInit.en.poke(true.B)
-          dut.clock.step()
-          dut.io.dramInit.en.poke(false.B)
-        }
-
         val inputBaseAddr = 0x0
         val weightsBaseAddr = 0x100
+        val inputW = 5
+        val inputH = 5
+        val batchSize = 2
         val inputMatrix = Array.fill(rows * cols)(Random.nextInt(256))
         val weightsMatrix = Array.fill(rows * cols)(Random.nextInt(256))
 
-
-        val addr = inputBaseAddr
-        writeToDram(0x100, 10)
-
-        // for ((value, i) <- inputMatrix.zipWithIndex) {
-        //   writeToDram(inputBaseAddr + i, value)
-        // }
-
-        // Write weights matrix to DRAM
-        // for ((value, i) <- weightsMatrix.zipWithIndex) {
-        //   writeToDram(weightsBaseAddr + i, value)
-        // }
+        dut.reset.poke(true)
+        dut.clock.step()
+        dut.reset.poke(false)
+        dut.clock.step()
 
         dut.io.cmd.bits.weightsAddr.poke(weightsBaseAddr)
         dut.io.cmd.bits.inputAddr.poke(inputBaseAddr)
-        // dut.io.cmd.bits.weightsDim.w.poke()
-        // dut.io.cmd.bits.weightsDim.h.poke()
-        // dut.io.cmd.bits.inputDim.w.poke()
-        // dut.io.cmd.bits.inputDim.h.poke()
-        // dut.io.cmd.bits.batchSize.poke(2.U)
-
+        dut.io.cmd.bits.weightsDim.w.poke(inputW)
+        dut.io.cmd.bits.weightsDim.h.poke(inputH)
+        dut.io.cmd.bits.inputDim.w.poke(inputW)
+        dut.io.cmd.bits.inputDim.h.poke(inputH)
+        dut.io.cmd.bits.batchSize.poke(batchSize)
         dut.io.cmd.valid.poke(true)
-        dut.clock.step(4)
+        dut.clock.step(30)
 
     }
   }
