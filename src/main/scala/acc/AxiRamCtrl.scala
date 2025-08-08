@@ -10,7 +10,7 @@ class AxiRamWrCtrlCmd(dataWidth: Int, addrWidth: Int) extends Bundle {
 
 class AxiRamRdCtrlCmd(dataWidth: Int, addrWidth: Int) extends Bundle {
   val addr = UInt(addrWidth.W)
-  val len  = UInt(8.W)
+  val len  = UInt(dataWidth.W)
 }
 
 class AxiRamRdResp(dataWidth: Int, addrWidth: Int) extends Bundle {
@@ -101,17 +101,16 @@ class AxiRamRdCtrl(
   id: Int = 0
 ) extends Module {
   val io = IO(new AxiRamRdCtrlIO(dataWidth, addrWidth, idWidth))
-
+  val dataWidthB = dataWidth / 8
   val sIdle :: sAr :: sR :: Nil = Enum(3)
   val state = RegInit(sIdle)
-
   val cmd = Reg(new AxiRamRdCtrlCmd(dataWidth, addrWidth))
   val beatCount = RegInit(0.U(8.W))
 
   io.axi.ar.id      := id.U
   io.axi.ar.addr    := cmd.addr
-  io.axi.ar.len     := cmd.len
-  io.axi.ar.size    := log2Ceil(dataWidth / 8).U
+  io.axi.ar.len     := cmd.len(8, 0)
+  io.axi.ar.size    := log2Ceil(dataWidthB).U
   io.axi.ar.burst   := "b01".U 
   io.axi.ar.lock    := 0.U
   io.axi.ar.cache   := 0.U
@@ -142,9 +141,13 @@ class AxiRamRdCtrl(
     }
     is(sR) {
       when(io.axi.r.valid && io.resp.ready) {
-        printf(p"[AxiRamRdCtrl::sR] Beat: ${beatCount} recv: 0x${Hexadecimal(io.axi.r.data)}\n")
-        when(io.axi.r.last) {
-          state := sIdle
+        printf(p"[AxiRamRdCtrl::sR] Beat: ${beatCount} recv: 0x${Hexadecimal(io.axi.r.data)} (last? ${io.axi.r.last}) \n")
+     
+        when(io.axi.r.last && (cmd.len - beatCount) === 0.U ) {
+          state := sIdle  
+        }.elsewhen (io.axi.r.last) {
+            cmd.addr := cmd.addr + dataWidthB.U * beatCount
+            cmd.len := cmd.len - beatCount
         }.otherwise {
           beatCount := beatCount + 1.U
         }
